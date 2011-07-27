@@ -38,7 +38,7 @@ AA
 Using:
 
    aa start             = starts the work session of the day
-   aa alert <resumo>    = alerts what he is doing now
+   aa post <resumo>     = posts what he is doing now
    aa stop              = stops the work session of the day
    aa config <config> <valor> = seta valor da config
 """
@@ -100,25 +100,25 @@ def enviar():
     fim = False
     home = os.getenv("HOME")
     f = open(home+"/.aa.txt", "r")
-    alertas = f.read().splitlines()
+    posts = f.read().splitlines()
     f.close()
     # FIXME cuidar de possíveis problemas de concorrência
     f = open(home+"/.aa.txt", "w")
     f.close()
-    for alerta in alertas:
+    for post in posts:
         # prepare the string
-        alerta = alerta.split(',')
-        msg = {'user': aaconfig.get_config(['user','nickname']), 'log': alerta[0]+'::'+alerta[1]}
+        post = post.split(',')
+        msg = {'user': aaconfig.get_config(['user','nickname']), 'log': post[0]+'::'+post[1]}
         dados = urllib.parse.urlencode(msg)
         # sends the string
-        print("Sending:",alerta[1])
+        print("Sending:",post[1])
         req = urllib.request.Request('http://nightsc.com.br/aa/novo_log.php',
                                      dados.encode('ascii'))
         res = urllib.request.urlopen(req)
         #pagina = res.read()
         res.close()
         # prepare the flag that will stop the daemon
-        if alerta[1] == 'stop':
+        if post[1] == 'stop':
             fim = True
     return fim
 
@@ -153,12 +153,12 @@ def direciona(args):
         # starts the daemon
         daemonificar()
         print('[AA] Daemon started')
-    elif args[0] in ['alert','informa', 'marca', 'anota', 'msg'] and args[1]:
+    elif args[0] in ['alert','informa', 'marca', 'anota', 'msg','post'] and args[1]:
         # registra marca no registro iniciado (corrente)
         msg = ''.join([pal+" " for pal in sys.argv[2:]])
         msg = msg.strip()
-        log("alert "+msg)
-        print('[AA] New alert: "%s" logged.' % msg)
+        log("post "+msg)
+        print('[AA] New post: "%s" logged.' % msg)
     elif args[0] in ['config','configura','seta'] and args[1]:
         aaconfig.configura(sys.argv[2:])
     else:

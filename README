@@ -4,7 +4,7 @@ AA
 Introduction
 ============
 
-aa    = Main interface (aa start, aa alert 'foo', aa stop)
+aa    = Main interface (aa start, aa post 'foo', aa stop)
 aad   = Daemon started by aa (or could we use just threads from aa?)
 
 Installing
@@ -24,7 +24,7 @@ Using
 Now you can use:
 
     $ aa start                    ... start your session
-    $ aa alert 'foo'              ... alert 'foo'
+    $ aa post 'foo'               ... post 'foo'
     $ aa stop                     ... stop your session
     $ aa config nickname yournick ... set your nickname
 
