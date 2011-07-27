@@ -86,7 +86,6 @@ class Enviador(Sentinela):
             self.timer.start()
         else:
             Sent.parar()
-    
 
 def comeca():
     """Start the session"""
