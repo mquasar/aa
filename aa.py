@@ -90,9 +90,9 @@ class Enviador(Sentinela):
 
 def comeca():
     """Start the session"""
-    home = os.getenv("HOME")
-    f = open(home+"/.aa.txt", "w")
+    f = open(os.getenv("HOME")+"/.aa.txt", "w")
     f.close()
+    aaconfig.configura_default()
     os.system("aa daemon &")
 
 def enviar():
