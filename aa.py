@@ -92,7 +92,10 @@ def comeca():
     """Start the session"""
     f = open(os.getenv("HOME")+"/.aa.txt", "w")
     f.close()
-    aaconfig.configura_default()
+    try:
+        f = open(os.getenv("HOME")+"/.aaconfig", "r")
+    except IOError:
+        aaconfig.configura_default()
     os.system("aa daemon &")
 
 def enviar():
@@ -153,7 +156,7 @@ def direciona(args):
         # starts the daemon
         daemonificar()
         print('[AA] Daemon started')
-    elif args[0] in ['alert','informa', 'marca', 'anota', 'msg'] and args[1]:
+    elif args[0] in ['post','informa', 'marca', 'anota', 'msg'] and args[1]:
         # registra marca no registro iniciado (corrente)
         msg = ''.join([pal+" " for pal in sys.argv[2:]])
         msg = msg.strip()
