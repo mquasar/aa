@@ -180,8 +180,7 @@ class AADaemon(Daemon):
         """
         self.logger = AALogger()
 
-        self.notify('Your session has started. Programming, modafoca! :-)')        
-        #iniciando contador de tempo
+        self.notify('Your session has started. Programming, modafoca! :-)')
         while True:
             self.notify('Tick-tack...')
             self.logger.log('notify') # precisamos notificar isso no log?
@@ -192,7 +191,7 @@ class AADaemon(Daemon):
         """
         A simple wrapper to Ubuntu's notify-send.
         """
-        os.system('notify-send "AA [%s]: " "%s" "/nTempo restante: "' % (time.strftime("%d-%m-%y %H-%M-%S"), msg, timeleft))
+        os.system('notify-send "AA [%s]: " "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
 
 #
 # AA HTTP Sender
