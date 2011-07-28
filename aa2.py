@@ -55,6 +55,7 @@ class Daemon:
         Do the UNIX double-fork magic, see Stevens' "Advanced
         Programming in the UNIX Environment" for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
+	or http://code.activestate.com/recipes/66012-fork-a-daemon-process-on-unix/
         """
         try:
             pid = os.fork()
@@ -179,19 +180,18 @@ class AADaemon(Daemon):
         """
         self.logger = AALogger()
 
-        self.notify('Your session has started. Programming, modafoca! :-)')        
+        self.notify('Your session has started. Programming, modafoca! :-)')
         while True:
             self.notify('Tick-tack...')
             self.logger.log('notify') # precisamos notificar isso no log?
             # FIXME: notificar a cada X minutos e informar quanto tempo falta
             # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
             time.sleep(20)
-
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
         """
-        os.system('notify-send "AA [%s]:" "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
+        os.system('notify-send "AA [%s]: " "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
 
 #
 # AA HTTP Sender
