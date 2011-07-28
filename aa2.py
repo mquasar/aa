@@ -181,13 +181,34 @@ class AADaemon(Daemon):
         """
         self.logger = AALogger()
 
-        self.notify('Your session has started. Programming, modafoca! :-)')
+        avisos_padroes = 0
+        avisos_tick = 0
+        inicio = time.time()
+        #self.notify('Your session has started. Programming, modafoca! :-)')
         while True:
-            self.notify('Tick-tack...')
+            atual = time.time()
+            tick = int(aaconfig2.get(['user','tick']))
+            self.notify('Tick-tack... '+str(round((atual-inicio)/60.0,2))+\
+                        ' minutos')
             self.logger.log('notify') # precisamos notificar isso no log?
             # FIXME: notificar a cada X minutos e informar quanto tempo falta
             # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
-            time.sleep(20)
+            prox_aviso_padrao = 10*60 + avisos_padroes * 15*60
+            prox_aviso_tick = avisos_tick * tick
+            if prox_aviso_padrao < prox_aviso_tick:
+                prox_aviso = prox_aviso_padrao
+                avisos_padroes += 1
+            else:
+                prox_aviso = prox_aviso_tick
+                avisos_tick += 1
+            dormir = prox_aviso + inicio - atual
+            #self.logger.log('pad: '+str(prox_aviso_padrao))
+            #self.logger.log('tic: '+str(prox_aviso_tick))
+            #self.logger.log('prox: '+str(prox_aviso))
+            #self.logger.log('dormir: '+str(dormir))
+            #self.logger.log('ini-atu: '+str((inicio-atual)))
+            if dormir > 0:
+                time.sleep(float(dormir))
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
