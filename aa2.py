@@ -283,6 +283,7 @@ class AADaemon(Daemon):
         A simple wrapper to Ubuntu's notify-send.
         """
         os.system('notify-send "AA [%s]: " "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
+        os.system('espeak "%s"' % msg)
 
 #
 # AA HTTP Sender
@@ -395,7 +396,7 @@ if __name__ == "__main__":
             # send all the lines at ~/.aa.log file
             http_sender.send_log()
             # the daemon notifies that the session is finished
-            daemon.notify('Your session has finished. See ya!')
+            daemon.notify('Your session has ended. See ya!')
             # inform to the user at console
             print '[AA] Your session has finished. See ya!'
             # kill the daemon
