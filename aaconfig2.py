@@ -11,15 +11,20 @@ __init = """
 [user]
 nickname =
 email =
+tick = 30
 
 [server]
-url =
+url = http://nightsc.com.br/aa/novo_log.php
 """
 
 def init_config():
-    configuration.readfp(io.BytesIO(__init))
-    #configuration.read({'user': {'nickname': '', 'email': ''}, 'server': {'url': ''}})
-    __save()
+    try:
+        open(os.getenv('HOME')+'/.aaconfig')
+    except IOError:
+        configuration.readfp(io.BytesIO(__init))
+        #FIXME implement with dictionary?
+        #configuration.read({'user': {'nickname': '', 'email': ''}, 'server': {'url': ''}})
+        __save()
 
 def __save():
     with open(__get_config_file(), "wb") as f:
@@ -42,6 +47,11 @@ def config(params):
         else:
             configuration.set('user', attribute, value)
         __save()
+
+def get(params):
+    configuration.read(__get_config_file())
+    section, attribute = params
+    return configuration.get(section, attribute)
 
 if __name__ == "__main__":
     init_config()

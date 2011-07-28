@@ -20,13 +20,14 @@
 
 import sys, os, time, atexit, urllib, urllib2
 from signal import SIGTERM
+import aaconfig2
 
 guide = """
 _.__o_oOoOo[ AA ]oOoOo_o__._
 
-Using:
+Usage:
 
-   aa config <config> <valor> ... set up the config value
+   aa config <config> <value> ... set up the config value
    aa start                   ... starts the work session of the day
    aa alert <message>         ... alerts what he is doing now (offline)
    aa scream <message>        ... alerts what he is doing now (online)                
@@ -205,9 +206,9 @@ class AAHTTPSender:
         """
         Sends the msg to the server, encoding it apropriatelly.
         """
-        dic = {'user': os.getenv('NICKNAME'), 'log': msg}
+        dic = {'user': aaconfig2.get(['user','nickname']), 'log': msg}
         data = urllib.urlencode(dic)
-        req = urllib2.Request('http://nightsc.com.br/aa/novo_log.php', data.encode('ascii'))
+        req = urllib2.Request(aaconfig2.get(['server', 'url']), data.encode('ascii'))
         res = urllib2.urlopen(req)
         res.close()
 
@@ -281,6 +282,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         # START
         if args[0] in ['start', 'inicio', 'inicia', 'início', 'begin']:
+            aaconfig2.init_config()
             # start the logger (overwrite or create the ~/.aa.log file)
             logger.start()
             # log a start session action
@@ -326,9 +328,7 @@ if __name__ == "__main__":
 
         # CONFIG
         elif args[0] in ['config', 'configura', 'seta'] and args[1]:
-            # FIXME: to port mquasar's aaconfig to this version
-            #aaconfig.configura(sys.argv[2:])
-            pass
+            aaconfig2.config(sys.argv[2:])
 
         # UNKNOWN OPTION
         else:
