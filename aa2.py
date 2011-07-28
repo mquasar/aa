@@ -273,7 +273,7 @@ class AAHTTPSender:
         alerts = f.read().splitlines()
         f.close()
 
-        d = [{'user': aaconfig2.get(['user','nickname']), 'date': a.split(',')[:2][0], 'log': a.split(',')[:2][1]} for a in alerts]
+        d = [{'user': get(['user','nickname']), 'date': a.split(',')[:2][0], 'log': a.split(',')[:2][1]} for a in alerts]
         j = json.dumps(d)
         self.send(j)
 
@@ -379,7 +379,7 @@ if __name__ == "__main__":
             # log a scream action
             logger.log('shout ' + msg)
             # send the msg to the HTTP server, so it'll be online imediatelly!
-            j = json.dumps([{'user': aaconfig2.get(['user','nickname']), 'date': time.strftime("%d-%m-%y %H-%M-%S"), 'log': 'shout ' + msg}])
+            j = json.dumps([{'user': get(['user','nickname']), 'date': time.strftime("%d-%m-%y %H-%M-%S"), 'log': 'shout ' + msg}])
             http_sender.send(j)
             # inform the user
             print '[AA] New shout: "%s" logged.' % msg
