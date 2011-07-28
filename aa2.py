@@ -47,6 +47,7 @@ url=http://nightsc.com.br/aa/novo_log.php
 """
 
 def init_config():
+    """Checks if configuration file exists, case not creates one with initial layout"""
     try:
         open(__get_config_file())
     except IOError:
@@ -55,31 +56,47 @@ def init_config():
         __save()
 
 def __save():
+    """Saves configuration options to file"""
     with open(__get_config_file(), "wb") as f:
         configuration.write(f)
 
 def __get_config_file():
+    """Gets configuration file name"""
     return os.getenv('HOME')+'/.aaconfig'
 
 def config(params):
+    """Receives a list with attribute and value.
+    Parses attribute for section information and saves value associated."""
     configuration.read(__get_config_file())
+    #if section user not present, then create config file with initial layout
     if not configuration.has_section('user'):
         init_config()
+    #checks if params is the right size
     if len(params) == 2:
         attribute, value = params
+        #if attribute is like section.attribute parses it
         if attribute.count('.') == 1:
             section, attribute = attribute.split('.')
+            #if section does not exist creates it
             if not configuration.has_section(section):
                 configuration.add_section(section)
+            #else set correspondent value
             configuration.set(section, attribute, value)
         else:
+            #if no section is specified, add attribute to user section
             configuration.set('user', attribute, value)
         __save()
 
 def get(params):
+    """Receives a list with section and attribute name and returns the correspondent value"""
     configuration.read(__get_config_file())
-    section, attribute = params
-    return configuration.get(section, attribute)
+    if (len(params)) == 2:
+        section, attribute = params
+        try:
+            return configuration.get(section, attribute)
+        except ConfigParser.NoOptionError:
+            pass
+    return None
 
 #
 # Generic Double-fork based Daemon
