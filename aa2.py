@@ -40,7 +40,7 @@ __init = """
 [user]
 nickname=
 email=
-tick=20
+tick=900
 
 [server]
 url=http://nightsc.com.br/aa/novo_log.php
@@ -252,15 +252,10 @@ class AADaemon(Daemon):
         avisos_padroes = 0
         avisos_tick = 0
         inicio = time.time()
-        #self.notify('Your session has started. Programming, modafoca! :-)')
+        self.notify('Your session has started. Programming, modafoca! :-)')
         while True:
             atual = time.time()
-            tick = int(aaconfig2.get(['user','tick']))
-            self.notify('Tick-tack... '+str(round((atual-inicio)/60.0,2))+\
-                        ' minutos')
-            self.logger.log('notify') # precisamos notificar isso no log?
-            # FIXME: notificar a cada X minutos e informar quanto tempo falta
-            # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
+            tick = int(get(['user','tick']))
             prox_aviso_padrao = 10*60 + avisos_padroes * 15*60
             prox_aviso_tick = avisos_tick * tick
             if prox_aviso_padrao < prox_aviso_tick:
@@ -277,6 +272,11 @@ class AADaemon(Daemon):
             #self.logger.log('ini-atu: '+str((inicio-atual)))
             if dormir > 0:
                 time.sleep(float(dormir))
+                self.notify('Tick-tack... '+str(round((atual-inicio)/60.0,2))+\
+                            ' minutos')
+                self.logger.log('notify') # precisamos notificar isso no log?
+                # FIXME: notificar a cada X minutos e informar quanto tempo falta
+                # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
