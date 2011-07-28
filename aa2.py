@@ -159,7 +159,7 @@ class Daemon:
             pid = None
 
             if pid:
-                message = "[AA] pidfile %s already exist. Daemon already running?\n"
+                message = "[AA] pidfile %s already exists. Daemon already running?\n"
                 sys.stderr.write(message % self.pidfile)
                 sys.exit(1)
 
@@ -171,14 +171,8 @@ class Daemon:
         """
         Stop the daemon
         """
-        # Get the pid from the pidfile
-        try:
-            pf = file(self.pidfile,'r')
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
 
+        pid = self.getpid()
         if not pid:
             message = "[AA] pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
@@ -211,6 +205,16 @@ class Daemon:
         daemonized by start() or restart().
         """
         pass
+
+    def getpid(self):
+        # Get the pid from the pidfile
+        try:
+            pf = file(self.pidfile,'r')
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+        return pid
 
 #
 # AA Daemon
@@ -375,10 +379,15 @@ if __name__ == "__main__":
         # CONFIG
         elif args[0] in ['config', 'configura', 'seta'] and args[1]:
             config(sys.argv[2:])
+        elif args[0] in ['status', 'st']:
+            if daemon.getpid() is not None:
+                print '[AA] daemon is up and running... (pid: %s)' % daemon.getpid()
+            else:
+                print '[AA] Oh nooo! daemon is not running... Get back to work!!!'
 
         # UNKNOWN OPTION
         else:
-            print('[AA] Unknown option: "%s". Please, try again!' % args[0])
+            print'[AA] Unknown option: "%s". Please, try again!' % args[0]
             sys.exit(2)
             sys.exit(0)
     else:
