@@ -30,8 +30,9 @@ Usage:
    aa config <config> <value> ... set up the config value
    aa start                   ... starts the work session of the day
    aa alert <message>         ... alerts what he is doing now (offline)
-   aa scream <message>        ... alerts what he is doing now (online)
+   aa shout <message>        ... alerts what he is doing now (online)
    aa stop                    ... stops the work session of the day
+   aa status                  ... checks daemon status
 """
 
 configuration = ConfigParser.RawConfigParser()
