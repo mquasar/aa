@@ -184,9 +184,9 @@ class AADaemon(Daemon):
         while True:
             self.notify('Tick-tack...')
             self.logger.log('notify') # precisamos notificar isso no log?
-            # FIXME: informar quanto tempo falta
+            # FIXME: notificar a cada X minutos e informar quanto tempo falta
             # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
-            time.sleep(15*60)
+            time.sleep(20)
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
