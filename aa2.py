@@ -18,9 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 #-----------------------------------------------------------------------------
 
-import sys, os, time, atexit, urllib, urllib2
+import sys, os, time, atexit, urllib, urllib2, io
 from signal import SIGTERM
-import aaconfig2
+import ConfigParser
 
 guide = """
 _.__o_oOoOo[ AA ]oOoOo_o__._
@@ -30,9 +30,55 @@ Usage:
    aa config <config> <value> ... set up the config value
    aa start                   ... starts the work session of the day
    aa alert <message>         ... alerts what he is doing now (offline)
-   aa scream <message>        ... alerts what he is doing now (online)                
+   aa scream <message>        ... alerts what he is doing now (online)
    aa stop                    ... stops the work session of the day
 """
+
+configuration = ConfigParser.RawConfigParser()
+__init = """
+[user]
+nickname=
+email=
+tick=20
+
+[server]
+url=http://nightsc.com.br/aa/novo_log.php
+"""
+
+def init_config():
+    try:
+        open(__get_config_file())
+    except IOError:
+        configuration.readfp(io.BytesIO(__init))
+        #FIXME implement with dictionaries maybe
+        __save()
+
+def __save():
+    with open(__get_config_file(), "wb") as f:
+        configuration.write(f)
+
+def __get_config_file():
+    return os.getenv('HOME')+'/.aaconfig'
+
+def config(params):
+    configuration.read(__get_config_file())
+    if not configuration.has_section('user'):
+        init_config()
+    if len(params) == 2:
+        attribute, value = params
+        if attribute.count('.') == 1:
+            section, attribute = attribute.split('.')
+            if not configuration.has_section(section):
+                configuration.add_section(section)
+            configuration.set(section, attribute, value)
+        else:
+            configuration.set('user', attribute, value)
+        __save()
+
+def get(params):
+    configuration.read(__get_config_file())
+    section, attribute = params
+    return configuration.get(section, attribute)
 
 #
 # Generic Double-fork based Daemon
@@ -42,7 +88,7 @@ class Daemon:
     """
     A generic daemon class. From Sander Marechal 
       <http://www.jejik.com/authors/sander_marechal/>
-    
+
     Usage: subclass the Daemon class and override the run() method
     """
     def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
@@ -50,13 +96,13 @@ class Daemon:
         self.stdout = stdout
         self.stderr = stderr
         self.pidfile = pidfile
-        
+
     def daemonize(self):
         """
         Do the UNIX double-fork magic, see Stevens' "Advanced
         Programming in the UNIX Environment" for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-	or http://code.activestate.com/recipes/66012-fork-a-daemon-process-on-unix/
+        or http://code.activestate.com/recipes/66012-fork-a-daemon-process-on-unix/
         """
         try:
             pid = os.fork()
@@ -66,12 +112,12 @@ class Daemon:
         except OSError, e:
             sys.stderr.write("[AA] Fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
             sys.exit(1)
-                
+
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
         os.umask(0)
-           
+
         # do second fork
         try:
             pid = os.fork()
@@ -81,7 +127,7 @@ class Daemon:
         except OSError, e:
             sys.stderr.write("[AA] Fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
             sys.exit(1)
-           
+
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
@@ -91,15 +137,15 @@ class Daemon:
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
-           
+
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
         file(self.pidfile,'w+').write("%s\n" % pid)
-           
+
     def delpid(self):
         os.remove(self.pidfile)
-     
+
     def start(self):
         """
         Start the daemon
@@ -111,16 +157,16 @@ class Daemon:
             pf.close()
         except IOError:
             pid = None
-           
+
             if pid:
                 message = "[AA] pidfile %s already exist. Daemon already running?\n"
                 sys.stderr.write(message % self.pidfile)
                 sys.exit(1)
-                   
+
         # Start the daemon
         self.daemonize()
         self.run()
-     
+
     def stop(self):
         """
         Stop the daemon
@@ -132,13 +178,13 @@ class Daemon:
             pf.close()
         except IOError:
             pid = None
-           
+
         if not pid:
             message = "[AA] pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
             return # not an error in a restart
-     
-        # Try killing the daemon process       
+
+        # Try killing the daemon process
         try:
             while 1:
                 os.kill(pid, SIGTERM)
@@ -151,14 +197,14 @@ class Daemon:
                 else:
                     print str(err)
                     sys.exit(1)
-     
+
     def restart(self):
         """
         Restart the daemon
         """
         self.stop()
         self.start()
-     
+
     def run(self):
         """
         You should override this method when you subclass Daemon. It will be called after the process has been
@@ -187,7 +233,7 @@ class AADaemon(Daemon):
             self.logger.log('notify') # precisamos notificar isso no log?
             # FIXME: notificar a cada X minutos e informar quanto tempo falta
             # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
-            time.sleep(20)
+            time.sleep(120)
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
@@ -206,9 +252,9 @@ class AAHTTPSender:
         """
         Sends the msg to the server, encoding it apropriatelly.
         """
-        dic = {'user': aaconfig2.get(['user','nickname']), 'log': msg}
+        dic = {'user': get(['user','nickname']), 'log': msg}
         data = urllib.urlencode(dic)
-        req = urllib2.Request(aaconfig2.get(['server', 'url']), data.encode('ascii'))
+        req = urllib2.Request(get(['server', 'url']), data.encode('ascii'))
         res = urllib2.urlopen(req)
         res.close()
 
@@ -262,7 +308,7 @@ class AALogger:
 #
 # Main Function (start here!)
 #
- 
+
 if __name__ == "__main__":
     # Creating the AA modules
 
@@ -275,14 +321,14 @@ if __name__ == "__main__":
     # Here the daemon that notifies the user every N seconds
     # /tmp/aad.pid has the PID of the forked daemon
     daemon = AADaemon('/tmp/aad.pid')
-    
+
     # Parsing console arguments
     # FIXME: talvez usar o argparse?
     args = sys.argv[1:]
     if len(sys.argv) > 1:
         # START
         if args[0] in ['start', 'inicio', 'inicia', 'início', 'begin']:
-            aaconfig2.init_config()
+            init_config()
             # start the logger (overwrite or create the ~/.aa.log file)
             logger.start()
             # log a start session action
@@ -328,7 +374,7 @@ if __name__ == "__main__":
 
         # CONFIG
         elif args[0] in ['config', 'configura', 'seta'] and args[1]:
-            aaconfig2.config(sys.argv[2:])
+            config(sys.argv[2:])
 
         # UNKNOWN OPTION
         else:
