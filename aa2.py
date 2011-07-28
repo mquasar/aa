@@ -181,17 +181,18 @@ class AADaemon(Daemon):
         self.logger = AALogger()
 
         self.notify('Your session has started. Programming, modafoca! :-)')        
+        #iniciando contador de tempo
         while True:
             self.notify('Tick-tack...')
             self.logger.log('notify') # precisamos notificar isso no log?
+            # FIXME: informar quanto tempo falta
             # FIXME: como verificar que o usuario logou? fica a cargo do servidor?
             time.sleep(15*60)
-
     def notify(self, msg):
         """
         A simple wrapper to Ubuntu's notify-send.
         """
-        os.system('notify-send "AA [%s]:" "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
+        os.system('notify-send "AA [%s]: " "%s" "/nTempo restante: "' % (time.strftime("%d-%m-%y %H-%M-%S"), msg, timeleft))
 
 #
 # AA HTTP Sender
