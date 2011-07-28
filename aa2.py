@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 #-----------------------------------------------------------------------------
 
-import sys, os, time, atexit, urllib, urllib2
+import sys, os, time, atexit, urllib, urllib2, json
 from signal import SIGTERM
 import aaconfig2
 
@@ -206,9 +206,9 @@ class AAHTTPSender:
         """
         Sends the msg to the server, encoding it apropriatelly.
         """
-        dic = {'user': aaconfig2.get(['user','nickname']), 'log': msg}
+        dic = {'json': msg}
         data = urllib.urlencode(dic)
-        req = urllib2.Request(aaconfig2.get(['server', 'url']), data.encode('ascii'))
+        req = urllib2.Request(aaconfig2.get(['server', 'url']), data)
         res = urllib2.urlopen(req)
         res.close()
 
@@ -221,9 +221,9 @@ class AAHTTPSender:
         alerts = f.read().splitlines()
         f.close()
 
-        for alert in alerts:
-            alert = alert.split(',')
-            self.send(alert[0] + '::' + alert[1])
+        d = [{'user': aaconfig2.get(['user','nickname']), 'date': a.split(',')[:2][0], 'log': a.split(',')[:2][1]} for a in alerts]
+        j = json.dumps(d)
+        self.send(j)
 
 #
 # AA Logger
@@ -283,6 +283,11 @@ if __name__ == "__main__":
         # START
         if args[0] in ['start', 'inicio', 'inicia', 'início', 'begin']:
             aaconfig2.init_config()
+            # checks if the user nickname is defined
+            if aaconfig2.get(['user','nickname']) is '':
+                print '[AA] Please, set your nickname before start hacking. Use: aa config user.nickname <YOUR NICKNAME>.'
+                sys.exit(0)
+
             # start the logger (overwrite or create the ~/.aa.log file)
             logger.start()
             # log a start session action
@@ -316,15 +321,16 @@ if __name__ == "__main__":
             print '[AA] New alert: "%s" logged.' % msg
 
         # SCREAM
-        elif args[0] in ['scream', 'say', 'oalert'] and args[1]:
+        elif args[0] in ['scream', 'say', 'oalert', 'shout'] and args[1]:
             msg = ''.join([pal+" " for pal in sys.argv[2:]])
             msg = msg.strip()
             # log a scream action
-            logger.log('scream ' + msg)
+            logger.log('shout ' + msg)
             # send the msg to the HTTP server, so it'll be online imediatelly!
-            http_sender.send(time.strftime("%d-%m-%y %H-%M-%S") + '::scream ' + msg)
+            j = json.dumps([{'user': aaconfig2.get(['user','nickname']), 'date': time.strftime("%d-%m-%y %H-%M-%S"), 'log': 'shout ' + msg}])
+            http_sender.send(j)
             # inform the user
-            print '[AA] New scream: "%s" logged.' % msg
+            print '[AA] New shout: "%s" logged.' % msg
 
         # CONFIG
         elif args[0] in ['config', 'configura', 'seta'] and args[1]:
