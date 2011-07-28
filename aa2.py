@@ -18,9 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 #-----------------------------------------------------------------------------
 
-import sys, os, time, atexit, urllib, urllib2
+import sys, os, time, atexit, urllib, urllib2, json, io
 from signal import SIGTERM
-import aaconfig2
+import ConfigParser
 
 guide = """
 _.__o_oOoOo[ AA ]oOoOo_o__._
@@ -30,9 +30,73 @@ Usage:
    aa config <config> <value> ... set up the config value
    aa start                   ... starts the work session of the day
    aa alert <message>         ... alerts what he is doing now (offline)
-   aa scream <message>        ... alerts what he is doing now (online)                
+   aa shout <message>        ... alerts what he is doing now (online)
    aa stop                    ... stops the work session of the day
+   aa status                  ... checks daemon status
 """
+
+configuration = ConfigParser.RawConfigParser()
+__init = """
+[user]
+nickname=
+email=
+tick=20
+
+[server]
+url=http://nightsc.com.br/aa/novo_log.php
+"""
+
+def init_config():
+    """Checks if configuration file exists, case not creates one with initial layout"""
+    try:
+        open(__get_config_file())
+    except IOError:
+        configuration.readfp(io.BytesIO(__init))
+        #FIXME implement with dictionaries maybe
+        __save()
+
+def __save():
+    """Saves configuration options to file"""
+    with open(__get_config_file(), "wb") as f:
+        configuration.write(f)
+
+def __get_config_file():
+    """Gets configuration file name"""
+    return os.getenv('HOME')+'/.aaconfig'
+
+def config(params):
+    """Receives a list with attribute and value.
+    Parses attribute for section information and saves value associated."""
+    configuration.read(__get_config_file())
+    #if section user not present, then create config file with initial layout
+    if not configuration.has_section('user'):
+        init_config()
+    #checks if params is the right size
+    if len(params) == 2:
+        attribute, value = params
+        #if attribute is like section.attribute parses it
+        if attribute.count('.') == 1:
+            section, attribute = attribute.split('.')
+            #if section does not exist creates it
+            if not configuration.has_section(section):
+                configuration.add_section(section)
+            #else set correspondent value
+            configuration.set(section, attribute, value)
+        else:
+            #if no section is specified, add attribute to user section
+            configuration.set('user', attribute, value)
+        __save()
+
+def get(params):
+    """Receives a list with section and attribute name and returns the correspondent value"""
+    configuration.read(__get_config_file())
+    if (len(params)) == 2:
+        section, attribute = params
+        try:
+            return configuration.get(section, attribute)
+        except ConfigParser.NoOptionError:
+            pass
+    return None
 
 #
 # Generic Double-fork based Daemon
@@ -42,7 +106,7 @@ class Daemon:
     """
     A generic daemon class. From Sander Marechal 
       <http://www.jejik.com/authors/sander_marechal/>
-    
+
     Usage: subclass the Daemon class and override the run() method
     """
     def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
@@ -50,13 +114,13 @@ class Daemon:
         self.stdout = stdout
         self.stderr = stderr
         self.pidfile = pidfile
-        
+
     def daemonize(self):
         """
         Do the UNIX double-fork magic, see Stevens' "Advanced
         Programming in the UNIX Environment" for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-	or http://code.activestate.com/recipes/66012-fork-a-daemon-process-on-unix/
+        or http://code.activestate.com/recipes/66012-fork-a-daemon-process-on-unix/
         """
         try:
             pid = os.fork()
@@ -66,12 +130,12 @@ class Daemon:
         except OSError, e:
             sys.stderr.write("[AA] Fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
             sys.exit(1)
-                
+
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
         os.umask(0)
-           
+
         # do second fork
         try:
             pid = os.fork()
@@ -81,7 +145,7 @@ class Daemon:
         except OSError, e:
             sys.stderr.write("[AA] Fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
             sys.exit(1)
-           
+
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
@@ -91,15 +155,15 @@ class Daemon:
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
-           
+
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
         file(self.pidfile,'w+').write("%s\n" % pid)
-           
+
     def delpid(self):
         os.remove(self.pidfile)
-     
+
     def start(self):
         """
         Start the daemon
@@ -111,34 +175,28 @@ class Daemon:
             pf.close()
         except IOError:
             pid = None
-           
+
             if pid:
-                message = "[AA] pidfile %s already exist. Daemon already running?\n"
+                message = "[AA] pidfile %s already exists. Daemon already running?\n"
                 sys.stderr.write(message % self.pidfile)
                 sys.exit(1)
-                   
+
         # Start the daemon
         self.daemonize()
         self.run()
-     
+
     def stop(self):
         """
         Stop the daemon
         """
-        # Get the pid from the pidfile
-        try:
-            pf = file(self.pidfile,'r')
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
-           
+
+        pid = self.getpid()
         if not pid:
             message = "[AA] pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
             return # not an error in a restart
-     
-        # Try killing the daemon process       
+
+        # Try killing the daemon process
         try:
             while 1:
                 os.kill(pid, SIGTERM)
@@ -151,20 +209,30 @@ class Daemon:
                 else:
                     print str(err)
                     sys.exit(1)
-     
+
     def restart(self):
         """
         Restart the daemon
         """
         self.stop()
         self.start()
-     
+
     def run(self):
         """
         You should override this method when you subclass Daemon. It will be called after the process has been
         daemonized by start() or restart().
         """
         pass
+
+    def getpid(self):
+        # Get the pid from the pidfile
+        try:
+            pf = file(self.pidfile,'r')
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+        return pid
 
 #
 # AA Daemon
@@ -227,9 +295,10 @@ class AAHTTPSender:
         """
         Sends the msg to the server, encoding it apropriatelly.
         """
-        dic = {'user': aaconfig2.get(['user','nickname']), 'log': msg}
+
+        dic = {'json': msg}
         data = urllib.urlencode(dic)
-        req = urllib2.Request(aaconfig2.get(['server', 'url']), data.encode('ascii'))
+        req = urllib2.Request(get(['server', 'url']), data.encode('ascii'))
         res = urllib2.urlopen(req)
         res.close()
 
@@ -242,9 +311,9 @@ class AAHTTPSender:
         alerts = f.read().splitlines()
         f.close()
 
-        for alert in alerts:
-            alert = alert.split(',')
-            self.send(alert[0] + '::' + alert[1])
+        d = [{'user': get(['user','nickname']), 'date': a.split(',')[:2][0], 'log': a.split(',')[:2][1]} for a in alerts]
+        j = json.dumps(d)
+        self.send(j)
 
 #
 # AA Logger
@@ -283,7 +352,7 @@ class AALogger:
 #
 # Main Function (start here!)
 #
- 
+
 if __name__ == "__main__":
     # Creating the AA modules
 
@@ -296,14 +365,19 @@ if __name__ == "__main__":
     # Here the daemon that notifies the user every N seconds
     # /tmp/aad.pid has the PID of the forked daemon
     daemon = AADaemon('/tmp/aad.pid')
-    
+
     # Parsing console arguments
     # FIXME: talvez usar o argparse?
     args = sys.argv[1:]
     if len(sys.argv) > 1:
         # START
         if args[0] in ['start', 'inicio', 'inicia', 'início', 'begin']:
-            aaconfig2.init_config()
+            init_config()
+            # checks if the user nickname is defined
+            if get(['user','nickname']) is '':
+                print '[AA] Please, set your nickname before start hacking. Use: aa config user.nickname <YOUR NICKNAME>.'
+                sys.exit(0)
+
             # start the logger (overwrite or create the ~/.aa.log file)
             logger.start()
             # log a start session action
@@ -337,23 +411,29 @@ if __name__ == "__main__":
             print '[AA] New alert: "%s" logged.' % msg
 
         # SCREAM
-        elif args[0] in ['scream', 'say', 'oalert'] and args[1]:
+        elif args[0] in ['scream', 'say', 'oalert', 'shout'] and args[1]:
             msg = ''.join([pal+" " for pal in sys.argv[2:]])
             msg = msg.strip()
             # log a scream action
-            logger.log('scream ' + msg)
+            logger.log('shout ' + msg)
             # send the msg to the HTTP server, so it'll be online imediatelly!
-            http_sender.send(time.strftime("%d-%m-%y %H-%M-%S") + '::scream ' + msg)
+            j = json.dumps([{'user': get(['user','nickname']), 'date': time.strftime("%d-%m-%y %H-%M-%S"), 'log': 'shout ' + msg}])
+            http_sender.send(j)
             # inform the user
-            print '[AA] New scream: "%s" logged.' % msg
+            print '[AA] New shout: "%s" logged.' % msg
 
         # CONFIG
         elif args[0] in ['config', 'configura', 'seta'] and args[1]:
-            aaconfig2.config(sys.argv[2:])
+            config(sys.argv[2:])
+        elif args[0] in ['status', 'st']:
+            if daemon.getpid() is not None:
+                print '[AA] daemon is up and running... (pid: %s)' % daemon.getpid()
+            else:
+                print '[AA] Oh nooo! daemon is not running... Get back to work!!!'
 
         # UNKNOWN OPTION
         else:
-            print('[AA] Unknown option: "%s". Please, try again!' % args[0])
+            print'[AA] Unknown option: "%s". Please, try again!' % args[0]
             sys.exit(2)
             sys.exit(0)
     else:
