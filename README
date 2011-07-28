@@ -18,17 +18,21 @@ Or just create a link:
 
     $ sudo ln -s /path/to/aa.py /usr/local/bin/aa
 
-Using
+Usage
 =====
 
 Now you can use:
 
-    $ aa start                    ... start your session
-    $ aa post 'foo'               ... post 'foo'
-    $ aa stop                     ... stop your session
-    $ aa config nickname yournick ... set your nickname
+    $ aa start                        ... start your session
+    $ aa post foo                     ... post foo
+    $ aa stop                         ... stop your session
+    $ aa config <attribute> <value>   ... set your nickname
+    $ aa status|st                    ... checks if daemon is running
+    $ aa shout foo                    ... post foo and sends message to server
 
 For now, just 'aa stop' will send your 'work log' to the server. You
 can see your log at http://nightsc.com.br/aa
 
- 
+Configuration attributes currently in use:
+nickname
+server.url
