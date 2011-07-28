@@ -304,7 +304,7 @@ if __name__ == "__main__":
             daemon.stop()
 
         # ALERT
-        elif args[0] in ['alert', 'informa', 'marca', 'anota', 'msg'] and args[1]:
+        elif args[0] in ['alert', 'informa', 'marca', 'anota', 'msg', 'post'] and args[1]:
             # no matter if we use quotes or not after the "aa alert"
             msg = ''.join([pal+" " for pal in sys.argv[2:]])
             msg = msg.strip()
