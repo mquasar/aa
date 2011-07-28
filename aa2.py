@@ -252,9 +252,9 @@ class AADaemon(Daemon):
         avisos_padroes = 0
         avisos_tick = 0
         inicio = time.time()
+        atual = time.time()
         self.notify('Your session has started. Programming, modafoca! :-)')
         while True:
-            atual = time.time()
             tick = int(get(['user','tick']))
             prox_aviso_padrao = 10*60 + avisos_padroes * 15*60
             prox_aviso_tick = avisos_tick * tick
@@ -272,6 +272,7 @@ class AADaemon(Daemon):
             #self.logger.log('ini-atu: '+str((inicio-atual)))
             if dormir > 0:
                 time.sleep(float(dormir))
+                atual = time.time()
                 self.notify('Tick-tack... '+str(round((atual-inicio)/60.0,2))+\
                             ' minutos')
                 self.logger.log('notify') # precisamos notificar isso no log?
