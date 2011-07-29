@@ -286,7 +286,7 @@ class AADaemon(Daemon):
         """
         A simple wrapper to Ubuntu's notify-send.
         """
-        os.system('notify-send "AA [%s]: " "%s"' % (time.strftime("%d-%m-%y %H-%M-%S"), msg))
+        os.system('notify-send "AA [%s]: " "%s"' % (time.strftime("%Y-%m-%d %H-%M-%S"), msg))
         os.system('espeak "%s"' % msg)
 
 #
@@ -347,7 +347,7 @@ class AALogger:
         """
         A wrapper to log msg to ~/.aa.log.
         """
-        self.write(time.strftime("%d-%m-%y %H-%M-%S") + ',' + msg + '\n')
+        self.write(time.strftime("%Y-%m-%d %H-%M-%S") + ',' + msg + '\n')
 
     def start(self):
         """
@@ -423,7 +423,7 @@ if __name__ == "__main__":
             # log a scream action
             logger.log('shout ' + msg)
             # send the msg to the HTTP server, so it'll be online imediatelly!
-            j = json.dumps([{'user': get(['user','nickname']), 'date': time.strftime("%d-%m-%y %H-%M-%S"), 'log': 'shout ' + msg}])
+            j = json.dumps([{'user': get(['user','nickname']), 'date': time.strftime("%Y-%m-%d %H-%M-%S"), 'log': 'shout ' + msg}])
             http_sender.send(j)
             # inform the user
             print '[AA] New shout: "%s" logged.' % msg
