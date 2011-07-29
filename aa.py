@@ -277,7 +277,7 @@ class AADaemon(Daemon):
             if dormir > 0:
                 time.sleep(float(dormir))
                 atual = time.time()
-                self.notify('Tick-tack... '+str(round((atual-inicio)/60.0,2))+\
+                self.notify('Tick-tack... '+str(round((atual-inicio)/600))+\
                             ' minutos')
                 self.logger.log('notify') # precisamos notificar isso no log?
                 # FIXME: notificar a cada X minutos e informar quanto tempo falta
