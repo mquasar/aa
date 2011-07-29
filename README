@@ -17,6 +17,10 @@ Configure your nickname and email:
     $ aa config user.nickname <YOUR NICKNAME HERE>
     $ aa config user.email <YOUR EMAIL HERE>
 
+Installing dependencies:
+
+	$ sudo apt-get install libnotify-bin espeak
+
 Usage
 =====
 
