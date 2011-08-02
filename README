@@ -10,7 +10,7 @@ Put aa.py on your /usr/local/bin:
 
 Or just create a link:
 
-    $ sudo ln -s /path/to/aa.py /usr/local/bin/aa
+    $ sudo ln -s /complete/path/to/your/aa.py /usr/local/bin/aa
 
 Configure your nickname:
 
@@ -18,7 +18,7 @@ Configure your nickname:
 
 And the AA-Web (the web server) URL:
 
-    $ aa config server.url http://192.168.6.103/macambira_aa/novo_log.php
+    $ aa config server.url http://nightsc.com.br/aa/novo_log.php
 
 Install dependencies:
 
@@ -35,6 +35,8 @@ Now you can use:
     $ aa stop                         ... stops your session
     $ aa config <attribute> <value>   ... sets some attribute
     $ aa status|st                    ... checks if daemon is running
+    $ aa viewlog                      ... shows your current log
+    $ aa push                         ... pushes your log to the server
 
 For now, just 'aa stop' will send your 'work log' to the server. You
 can see your log at http://nightsc.com.br/aa (or any server configured using
